@@ -1,5 +1,3 @@
-#include "Clip2Tri/Clip2Tri.h"
-
 /*
  * clip2tri.h
  *
@@ -51,21 +49,6 @@ clip2tri::~clip2tri()
    // Do nothing!
 }
 
-void Triangulate(const TArray<TArray<FPoint>>& InPolygons, TArray<FPoint>& OutTriangles, const TArray<FPoint>& InBoundingPolygon)
-{
-    FPolygonTree Solution;
-    if(!MergePolygonsToPolyTree(InPolygons, Solution)) 
-    {
-        // @todo: if not successfull say why
-    }
-
-    FPath Bounds = UpscaleClipperPoints(InBoundingPolygon);
-
-    if(!TriangulateComplex(OutPolygons, Bounds, Solution))
-    {
-        // @todo: if not successfull say why
-    }
-}
 
 void clip2tri::triangulate(const vector<vector<Point> > inputPolygons, vector<Point> &outputTriangles,
       const vector<Point> boundingPolygon)
@@ -80,15 +63,6 @@ void clip2tri::triangulate(const vector<vector<Point> > inputPolygons, vector<Po
    triangulateComplex(outputTriangles, bounds, solution);
 }
 
-FPath UpscaleClipperPoints(const TArray<FPoint>& InPolygon)
-{
-    FPath OutputPolygon;
-    OutputPolygon.Init(InPolygon.Num());
-    for(auto i = 0; i < InPolygon.Num(); i++)
-        OutputPolygon[i] = FIntPoint(InPolygon[i].X * CLIPPER_SCALE_FACTOR, InPolygon[i].Y * CLIPPER_SCALE_FACT);
-
-    return OutputPolygon;
-}
 
 Path clip2tri::upscaleClipperPoints(const vector<Point> &inputPolygon)
 {
@@ -99,21 +73,6 @@ Path clip2tri::upscaleClipperPoints(const vector<Point> &inputPolygon)
       outputPolygon[i] = IntPoint(S64(inputPolygon[i].x * CLIPPER_SCALE_FACT), S64(inputPolygon[i].y * CLIPPER_SCALE_FACT));
 
    return outputPolygon;
-}
-
-FPaths UpscaleClipperPoints(const TArray<TArray<FPoint>>& InPolygons)
-{
-    FPaths OutputPolygons;
-    OutputPolygons.Init(InPolygons.Num());
-
-    for(auto i = 0; i < InPolygons.Num(); i++)
-    {
-        OutputPolygons[i].Init(InPolygons[i].Num());
-        for(auto j = 0; j < InPolygons[i].Num(); j++)
-            OutputPolygons[i][j] = FIntPoint(InPolygons[i][j].X * CLIPPER_SCALE_FACTOR, InPolygons[i][j].Y * CLIPPER_SCALE_FACTOR);
-    }
-
-    return OutputPolygons;
 }
 
 
@@ -134,21 +93,6 @@ Paths clip2tri::upscaleClipperPoints(const vector<vector<Point> > &inputPolygons
    return outputPolygons;
 }
 
-TArray<TArray<FPoint>> DownscaleClipperPoints(const FPaths& InPolygons)
-{
-    TArray<TArray<FPoint>> OutputPolygons;
-    OutputPolygons.Init(InPolygons.Num());
-
-    for(auto i = 0; i < InPolygons.Num(); i++)
-    {
-        OutputPolygons[i].Init(InPolygons[i].Num());
-        for(auto j = 0; j < InPolygons[i].Num(); j++)
-            OutputPolygons[i][j] = FIntPoint(InPolygons[i][j].X * CLIPPER_SCALE_FACTOR_INVERSE, InPolygons[i][j].Y * CLIPPER_SCALE_FACTOR_INVERSE);
-    }
-
-    return OutputPolygons;
-}
-
 
 vector<vector<Point> > clip2tri::downscaleClipperPoints(const Paths &inputPolygons)
 {
@@ -165,24 +109,6 @@ vector<vector<Point> > clip2tri::downscaleClipperPoints(const Paths &inputPolygo
    }
 
    return outputPolygons;
-}
-
-bool MergePolygonsToPolygonTree(const TArray<TArray<FPoint>>& InPolygons, FPolygonTree& OutSolution)
-{
-    FPaths Input = UpscaleClipperPoints(InPolygons);
-
-    FClipper Clipper;
-    
-    try
-    {
-        Clipper.AddPaths(Input, PointSubject, true);
-    }
-    catch(...)
-    {
-        // @todo: handle
-    }
-
-    return Clipper.Execute(ctUnion, OutSolution, pftNonZero, pftNonZero);
 }
 
 
@@ -209,7 +135,6 @@ bool clip2tri::mergePolysToPolyTree(const vector<vector<Point> > &inputPolygons,
 
    return clipper.Execute(ctUnion, solution, pftNonZero, pftNonZero);
 }
-
 
 
 // Delete all poly2tri points from a vector and clear the vector
@@ -245,26 +170,6 @@ static void edgeShrink(Path &path)
    }
 }
 
-bool TriangulateComplex(TArray<FPoint>& OutTriangles, const FPath& InOutline, const FPolygonTree& InPolygonTree, bool bIgnoreFills, bool bIgnoreHoles)
-{
-    FPolygonNode* RootNode = nullptr;
-    FPolygonNode TempNode;
-    if(InPolygonTree.Total() == 0)
-        RootNode = &TempNode;
-    else
-        RootNode = InPolygonTree.GetFirst()->Parent;
-
-    RootNode->Contour = InOutline;
-
-    auto CurrentNode = RootNode;
-    while(CurrentNode != nullptr)
-    {
-        if((!bIgnoreHoles && CurrentNode->IsHole()) || (!bIgnoreFills && !CurrentNode->IsHole()))
-        {
-            
-        }
-    }
-}
 
 // This uses poly2tri to triangulate.  poly2tri isn't very robust so clipper needs to do
 // the cleaning of points before getting here.

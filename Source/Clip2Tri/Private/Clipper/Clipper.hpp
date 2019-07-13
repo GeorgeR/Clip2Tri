@@ -58,67 +58,6 @@
 #include <ostream>
 #include <functional>
 
-namespace Clipper
-{
-  enum class EClipType
-  {
-    Intersection,
-    Union,
-    Difference,
-    ExclusiveOr
-  };
-
-  enum class EPolygonType
-  {
-    Subject,
-    Clip
-  };
-
-  enum class EPolygonFillType
-  {
-    EvenOdd,
-    NonZero,
-    Positive,
-    Negative
-  };
-
-  struct FIntPoint
-  {
-  public:
-    int64 X;
-    int64 Y;
-
-    FIntPoint(const int64 InX = 0, const int64 InY = 0)
-      : X(InX),
-      Y(InY) { }
-
-    friend inline bool operator==(const FIntPoint& InLeft, const FIntPoint& InRight)
-    {
-      return InLeft.X == InRight.X && InLeft.Y == InRight.Y;
-    }
-
-    friend inline bool operator==(const FIntPoint& InLeft, const FIntPoint& InRight)
-    {
-      return InLeft.X != InRight.X || InLeft.Y != InRight.Y;
-    }
-  };
-
-  typedef TArray<FIntPoint> FPath;
-  typedef TArray<FPath> FPaths;
-  
-  inline FPath& operator<<(FPath& InPolygon, const FIntPoint& InPoint) 
-  {
-    InPolyline.Push(InPoint); 
-    return InPolyline; 
-  }
-
-  inline FPaths& operator<<(FPaths& InPolygons, const FPath& InPath) 
-  { 
-    InPolygons.Push(InPath);
-    return InPolygons;
-  }
-}
-
 namespace ClipperLib {
 
 enum ClipType { ctIntersection, ctUnion, ctDifference, ctXor };
@@ -168,21 +107,6 @@ std::ostream& operator <<(std::ostream &s, const IntPoint &p);
 std::ostream& operator <<(std::ostream &s, const Path &p);
 std::ostream& operator <<(std::ostream &s, const Paths &p);
 
-struct FDoublePoint
-{
-public:
-  double X;
-  double Y;
-
-  FDoublePoint(const double InX = 0.0, const double InY = 0.0)
-    : X(InX),
-    Y(InY) { }
-
-  FDoublePoint(FIntPoint InPoint)
-    : X(StaticCast<double>(InPoint.X)),
-    Y(StaticCast<double>(InPoint.Y)) { }
-};
-
 struct DoublePoint
 {
   double X;
@@ -190,123 +114,6 @@ struct DoublePoint
   DoublePoint(double x = 0, double y = 0) : X(x), Y(y) {}
   DoublePoint(IntPoint ip) : X((double)ip.X), Y((double)ip.Y) {}
 };
-
-enum class EInitializationOptions
-{
-  ReverseSolution = 1,
-  StrictlySimple = 2,
-  PreserveCollinear = 4
-};
-
-enum class EJoinType
-{
-  Square,
-  Round,
-  Miter
-};
-
-enum class EEndType
-{
-  ClosedPolygon,
-  ClosedLine,
-  OpenButt,
-  OpenSquare,
-  OpenRound
-};
-
-class FPolyNode;
-typedef TArray<FPolyNode*> FPolyNodes;
-
-class FPolyNode
-{
-public:
-  FPolyNode();
-  FPath Contour;
-  FPolyNodes Children;
-  FPolyNode* Parent;
-  
-  FPolyNode* GetNext() const;
-
-  bool IsHole() const;
-  bool IsOpen() const;
-
-  int32 GetNumChildren() const;
-
-private:
-  friend class FClipper;
-  friend class FClipperOffset;
-
-  uint32 Index;
-  bool bIsOpen;
-  EJoinType JoinType;
-  EEndType EndType;
-  FPolyNode* GetNextSiblingUp() const;
-  void AddChild(FPolyNode& InNode);
-};
-
-class FPolyTree
-  : public FPolyNode
-{
-public:
-  virtual ~FPolyTree();
-
-  FPolyNode* GetFirst() const;
-
-  void Clear();
-  
-  int32 GetTotal() const;
-
-private:
-  friend class FClipper;
-
-  FPolyNodes AllNodes;
-};
-
-bool Orientation(const FPath& InPoly);
-double Area(const FPath& InPoly);
-int32 PointInPolygon(const FIntPoint& InPoint, const FPath& InPath);
-
-void SimplifyPolygon(const FPath& InPolygon, FPaths& OutPolygons, EPolyFillType InFillType = EPolyFillType::EvenOdd);
-void SimplifyPolygons(const FPaths& InPolygons, FPaths& OutPolygons, EPolyFillType InFillType = EPolyFillType::EvenOdd);
-void SimplifyPolygons(FPaths& InOutPolygons, EPolyFillType InFillType = EPolyFillType::EvenOdd);
-
-void CleanPolygon(const FPath& InPolygon, FPath& OutPolygon, double InDistance = 1.415);
-void CleanPolygon(FPath& InOutPolygon, double InDistance = 1.415);
-void CleanPolygons(const FPaths& InPolygons, FPaths& OutPolygons, double InDistance = 1.415);
-void CleanPolygons(const FPaths& InOutPolygons, double InDistance = 1.415);
-
-void MinkowskiSum(const FPath& InPattern, const FPath& InPath, FPaths& OutSolution, bool bIsPathClosed);
-void MinkowskiSum(const FPath& InPattern, const FPaths& InPaths, FPaths& OutSolution, EPolyFillType InPathFillType, bool bIsPathClosed);
-void MinkowskiDiff(const FPath& InPolygonA, const FPath& InPolygonB, FPaths& OutSolution);
-
-void PolyTreeToPaths(const FPolyTree& InPolyTree, FPaths& OutPaths);
-void ClosedPathsFromPolyTree(const FPolyTree& InPolyTree, FPaths& OutPaths);
-void OpenPathsFromPolyTree(FPolyTree& InPolyTree, FPaths& OutPaths);
-
-void ReversePath(FPath& InOutPath);
-void ReversePaths(FPaths& InOutPaths);
-
-struct FIntRect
-{
-public:
-  int64 Left;
-  int64 Top;
-  int64 Right;
-  int64 Bottom;
-};
-
-enum class EEdgeSide
-{
-  Left = 1,
-  Right = 2
-};
-
-typedef TArray<FOutRec*> FPolyOutList;
-typedef TArray<FEdge*> FEdgeList;
-typedef TArray<FJoin*> FJoinList;
-typedef TArray<FIntersectionNode*> IntersectionList;
-
-
 //------------------------------------------------------------------------------
 
 #ifdef use_xyz
@@ -408,99 +215,6 @@ typedef std::vector < IntersectNode* > IntersectList;
 
 
 //------------------------------------------------------------------------------
-
-class FClipperBase
-{
-public:
-  FClipperBase();
-  virtual ~FClipperBase();
-
-  bool AddPath(const FPath& InPath, EPolyType InPolyType, bool bIsClosed);
-  bool AddPaths(const FPaths& InPaths, EPolyType InPolyType, bool bIsClosed);
-
-  virtual void Clear();
-
-  FIntRect GetBounds();
-
-  bool GetPreserveCollinear() const { return bPreserveCollinear; }
-  void SetPreserveCollinear(const bool InValue) { bPreserveCollinear = InValue; }
-
-protected:
-  void DisposeLocalMinimaList();
-  FEdge* AddBoundsToLML(FEdge* InEdge, bool bIsClosed);
-  void PopLocalMinima();
-  virtual void Reset();
-  FEdge* ProcessBound(FEdge* InEdge, bool bIsClockwise);
-  void InsertLocalMinima(FLocalMinima* InLocalMinima);
-  void DoMinimalLML(FEdge* InEdgeA, FEdge* InEdgeB, bool bIsClosed);
-  FEdge* DescendToMin(FEdge*& InEdge);
-  void AscendToMax(FEdge*& InEdge, bool bAppending, bool bIsClosed);
-  
-  FLocalMinima* CurrentLocalMinima;
-  FLocalMinima* MinimaList;
-  bool bUseFullRange;
-  FEdgeList Edges;
-  bool bPreserveCollinear;
-  bool bHasOpenPaths;
-};
-
-class FClipper
-  : public virtual FClipperBase
-{
-public:
-  FClipper(int32 InInitializationOptions = 0);
-  virtual ~FClipper();
-
-  bool Execute(EClipType InClipType, FPaths& OutSolution, EPolyFillType InSubjectFillType = EPolyFillType::EvenOdd, EPolyFillType InClipFillType = EPolyFillType::EvenOdd);
-  bool Execute(EClipType InClipType, FPolyTree& OutPolyTree, EPolyFillType InSubjectFillType = EPolyFillType::EvenOdd, EPolyFillType InClipFillType = EPolyFillType::EvenOdd);
-
-  bool GetReverseSolution() const { return bReverseOutput; }
-  void SetReverseSolution(const bool InValue) { bReverseOutput = InValue; }
-
-  bool GetStrictlySimple() const { return bStrictlySimple; }
-  void SetStrictlySimple(const bool InValue) { bStrictlySimple = InValue; }
-
-protected:
-  void Reset();
-  virtual bool ExecuteInternal();
-
-private:
-  FPolyOutList PolyOuts;
-  FJoinList Joins;
-  FJoinList GhostJoins;
-  FIntersectList IntersectList;
-  EClipType ClipType;
-  TSet<int64, TGreater<int64>> Scanbeam;
-  FEdge* ActiveEdges;
-  FEdge* SortedEdges;
-  bool bExecuteLocked;
-  EPolyFillType SubjectFillType;
-  EPolyFillType ClipFillType;
-  bool bReverseOutput;
-  bool bUsingPolyTree;
-  bool bStrictSimple;
-
-  void SetWindingCount(FEdge& InEdge);
-  bool IsEvenOddFillType(const FEdge& InEdge) const;
-  bool IsEvenOddAltFillType(const FEdge& InEdge) const;
-  void InsertScanbeam(const int64 Y);
-  int64 PopScanbeam();
-  void InsertLocalMinimaIntoAEL(const int64 InBotY);
-  void InsertEdgeIntoAEL(FEdge* InEdge, FEdge* InStartEdge);
-  void AddEdgeToSEL(FEdge* InEdge);
-  void CopyAELToSEL();
-  void DeleteFromSEL(FEdge* InEdge);
-  void DeleteFromAEL(FEdge* InEdge);
-  void UpdateEdgeIntoAEL(FEdge*& InEdge);
-  void SwapPositionsInSEL(FEdge* InEdgeA, FEdge* InEdgeB);
-  bool IsContributing(const FEdge& InEdge) const;
-  bool IsTopHorz(const int64 InPositionX);
-  void SwapPositionsInAEL(FEdge* InEdgeA, FEdge* InEdgeB);
-  void DoMaxima(FEdge* InEdge);
-  void PrepareHorzJoins(FEdge* InHorzEdge, bool bIsTopOfScanbeam);
-  void ProcessHorizontals(bool bIsTopOfScanbeam);
-  void ProcessHorizontal(FEdge* InHorzEdge, bool bIsTopOfScanbeam);
-};
 
 //ClipperBase is the ancestor to the Clipper class. It should not be
 //instantiated directly. This class simply abstracts the conversion of sets of
@@ -680,4 +394,5 @@ class clipperException : public std::exception
 } //ClipperLib namespace
 
 #endif //clipper_hpp
+
 

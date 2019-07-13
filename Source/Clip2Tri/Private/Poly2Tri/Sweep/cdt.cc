@@ -28,78 +28,45 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-#ifndef CDT_H
-#define CDT_H
+#include "cdt.h"
 
-#include "advancing_front.h"
-#include "sweep_context.h"
-#include "sweep.h"
-
-/**
- * 
- * @author Mason Green <mason.green@gmail.com>
- *
- */
- 
 namespace p2t {
 
-class CDT
+CDT::CDT(std::vector<Point*> polyline)
 {
-public:
+  sweep_context_ = new SweepContext(polyline);
+  sweep_ = new Sweep;
+}
 
-  /**
-   * Constructor - add polyline with non repeating points
-   * 
-   * @param polyline
-   */
-  CDT(std::vector<Point*> polyline);
-  
-   /**
-   * Destructor - clean up memory
-   */
-  ~CDT();
-  
-  /**
-   * Add a hole
-   * 
-   * @param polyline
-   */
-  void AddHole(std::vector<Point*> polyline);
-  
-  /**
-   * Add a steiner point
-   * 
-   * @param point
-   */
-  void AddPoint(Point* point);
-  
-  /**
-   * Triangulate - do this AFTER you've added the polyline, holes, and Steiner points
-   */
-  void Triangulate();
-  
-  /**
-   * Get CDT triangles
-   */
-  std::vector<Triangle*> GetTriangles();
-  
-  /**
-   * Get triangle map
-   */
-  std::list<Triangle*> GetMap();
+void CDT::AddHole(std::vector<Point*> polyline)
+{
+  sweep_context_->AddHole(polyline);
+}
 
-  private:
+void CDT::AddPoint(Point* point) {
+  sweep_context_->AddPoint(point);
+}
 
-  /**
-   * Internals
-   */
-   
-  SweepContext* sweep_context_;
-  Sweep* sweep_;
+void CDT::Triangulate()
+{
+  sweep_->Triangulate(*sweep_context_);
+}
 
-};
+std::vector<p2t::Triangle*> CDT::GetTriangles()
+{
+  return sweep_context_->GetTriangles();
+}
+
+std::list<p2t::Triangle*> CDT::GetMap()
+{
+  return sweep_context_->GetMap();
+}
+
+CDT::~CDT()
+{
+  delete sweep_context_;
+  delete sweep_;
+}
 
 }
 
-#endif

@@ -34,7 +34,7 @@ public class Clip2Tri : ModuleRules
 				"SlateCore"
 			});
 
-	    Definitions.AddRange(
+	    PublicDefinitions.AddRange(
             new string[]
             {
                 "ANSI_DECLARATORS",

@@ -1,4 +1,4 @@
-/* 
+/*
  * Poly2Tri Copyright (c) 2009-2010, Poly2Tri Contributors
  * http://code.google.com/p/poly2tri/
  *
@@ -28,78 +28,82 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-#ifndef CDT_H
-#define CDT_H
-
 #include "advancing_front.h"
-#include "sweep_context.h"
-#include "sweep.h"
 
-/**
- * 
- * @author Mason Green <mason.green@gmail.com>
- *
- */
- 
 namespace p2t {
 
-class CDT
+AdvancingFront::AdvancingFront(Node& head, Node& tail)
 {
-public:
+  head_ = &head;
+  tail_ = &tail;
+  search_node_ = &head;
+}
 
-  /**
-   * Constructor - add polyline with non repeating points
-   * 
-   * @param polyline
-   */
-  CDT(std::vector<Point*> polyline);
-  
-   /**
-   * Destructor - clean up memory
-   */
-  ~CDT();
-  
-  /**
-   * Add a hole
-   * 
-   * @param polyline
-   */
-  void AddHole(std::vector<Point*> polyline);
-  
-  /**
-   * Add a steiner point
-   * 
-   * @param point
-   */
-  void AddPoint(Point* point);
-  
-  /**
-   * Triangulate - do this AFTER you've added the polyline, holes, and Steiner points
-   */
-  void Triangulate();
-  
-  /**
-   * Get CDT triangles
-   */
-  std::vector<Triangle*> GetTriangles();
-  
-  /**
-   * Get triangle map
-   */
-  std::list<Triangle*> GetMap();
+Node* AdvancingFront::LocateNode(const double& x)
+{
+  Node* node = search_node_;
 
-  private:
+  if (x < node->value) {
+    while ((node = node->prev) != NULL) {
+      if (x >= node->value) {
+        search_node_ = node;
+        return node;
+      }
+    }
+  } else {
+    while ((node = node->next) != NULL) {
+      if (x < node->value) {
+        search_node_ = node->prev;
+        return node->prev;
+      }
+    }
+  }
+  return NULL;
+}
 
-  /**
-   * Internals
-   */
-   
-  SweepContext* sweep_context_;
-  Sweep* sweep_;
+Node* AdvancingFront::FindSearchNode(const double& x)
+{
+  (void)x; // suppress compiler warnings "unused parameter 'x'"
+  // TODO: implement BST index
+  return search_node_;
+}
 
-};
+Node* AdvancingFront::LocatePoint(const Point* point)
+{
+  const double px = point->x;
+  Node* node = FindSearchNode(px);
+  const double nx = node->point->x;
+
+  if (px == nx) {
+    if (point != node->point) {
+      // We might have two nodes with same x value for a short time
+      if (point == node->prev->point) {
+        node = node->prev;
+      } else if (point == node->next->point) {
+        node = node->next;
+      } else {
+        assert(0);
+      }
+    }
+  } else if (px < nx) {
+    while ((node = node->prev) != NULL) {
+      if (point == node->point) {
+        break;
+      }
+    }
+  } else {
+    while ((node = node->next) != NULL) {
+      if (point == node->point)
+        break;
+    }
+  }
+  if(node) search_node_ = node;
+  return node;
+}
+
+AdvancingFront::~AdvancingFront()
+{
+}
 
 }
 
-#endif

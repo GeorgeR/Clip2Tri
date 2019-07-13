@@ -1,4 +1,4 @@
-/* 
+/*
  * Poly2Tri Copyright (c) 2009-2010, Poly2Tri Contributors
  * http://code.google.com/p/poly2tri/
  *
@@ -28,77 +28,90 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-#ifndef CDT_H
-#define CDT_H
 
-#include "advancing_front.h"
-#include "sweep_context.h"
-#include "sweep.h"
+#ifndef ADVANCED_FRONT_H
+#define ADVANCED_FRONT_H
 
-/**
- * 
- * @author Mason Green <mason.green@gmail.com>
- *
- */
- 
+#include "../common/shapes.h"
+
 namespace p2t {
 
-class CDT
-{
-public:
+struct Node;
 
-  /**
-   * Constructor - add polyline with non repeating points
-   * 
-   * @param polyline
-   */
-  CDT(std::vector<Point*> polyline);
-  
-   /**
-   * Destructor - clean up memory
-   */
-  ~CDT();
-  
-  /**
-   * Add a hole
-   * 
-   * @param polyline
-   */
-  void AddHole(std::vector<Point*> polyline);
-  
-  /**
-   * Add a steiner point
-   * 
-   * @param point
-   */
-  void AddPoint(Point* point);
-  
-  /**
-   * Triangulate - do this AFTER you've added the polyline, holes, and Steiner points
-   */
-  void Triangulate();
-  
-  /**
-   * Get CDT triangles
-   */
-  std::vector<Triangle*> GetTriangles();
-  
-  /**
-   * Get triangle map
-   */
-  std::list<Triangle*> GetMap();
+// Advancing front node
+struct Node {
+  Point* point;
+  Triangle* triangle;
 
-  private:
+  Node* next;
+  Node* prev;
 
-  /**
-   * Internals
-   */
-   
-  SweepContext* sweep_context_;
-  Sweep* sweep_;
+  double value;
+
+  Node(Point& p) : point(&p), triangle(NULL), next(NULL), prev(NULL), value(p.x)
+  {
+  }
+
+  Node(Point& p, Triangle& t) : point(&p), triangle(&t), next(NULL), prev(NULL), value(p.x)
+  {
+  }
 
 };
+
+// Advancing front
+class AdvancingFront {
+public:
+
+AdvancingFront(Node& head, Node& tail);
+// Destructor
+~AdvancingFront();
+
+Node* head();
+void set_head(Node* node);
+Node* tail();
+void set_tail(Node* node);
+Node* search();
+void set_search(Node* node);
+
+/// Locate insertion point along advancing front
+Node* LocateNode(const double& x);
+
+Node* LocatePoint(const Point* point);
+
+private:
+
+Node* head_, *tail_, *search_node_;
+
+Node* FindSearchNode(const double& x);
+};
+
+inline Node* AdvancingFront::head()
+{
+  return head_;
+}
+inline void AdvancingFront::set_head(Node* node)
+{
+  head_ = node;
+}
+
+inline Node* AdvancingFront::tail()
+{
+  return tail_;
+}
+inline void AdvancingFront::set_tail(Node* node)
+{
+  tail_ = node;
+}
+
+inline Node* AdvancingFront::search()
+{
+  return search_node_;
+}
+
+inline void AdvancingFront::set_search(Node* node)
+{
+  search_node_ = node;
+}
 
 }
 

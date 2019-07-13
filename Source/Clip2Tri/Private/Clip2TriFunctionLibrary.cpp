@@ -5,31 +5,31 @@
 
 using namespace c2t;
 
-void UClip2TriFunctionLibrary::Triangulate(TArray<FVector> Points, TArray<FVector>& Vertices, TArray<int32>& Triangles, TArray<int32>& Bounds, bool bFlip /*= false*/)
+void UClip2TriFunctionLibrary::Triangulate(const TArray<FVector>& InPoints, TArray<FVector>& OutVertices, TArray<int32>& OutTriangles, TArray<int32>& OutBounds, bool bFlip /*= false*/)
 {
-	if (Points.Num() < 3)
+	if (InPoints.Num() < 3)
 		return;
 
-	vector<vector<Point>> inputPoints;
-	vector<Point> outputTriangles;
-	vector<Point> boundingPolygon;
+	vector<vector<Point>> InputPoints;
+	vector<Point> OutputTriangles;
+	vector<Point> BoundingPolygon;
 
-	inputPoints.push_back(vector<Point>());
-	for (auto i = 0; i < Points.Num(); i++)
-		inputPoints[0].push_back(Point(Points[i].X, Points[i].Y));
+	InputPoints.push_back(vector<Point>());
+	for (auto i = 0; i < InPoints.Num(); i++)
+		InputPoints[0].push_back(Point(InPoints[i].X, InPoints[i].Y));
 
-	clip2tri clip2tri;
-	clip2tri.triangulate(inputPoints, outputTriangles, boundingPolygon);
+	clip2tri Clip2Tri;
+	Clip2Tri.triangulate(InputPoints, OutputTriangles, BoundingPolygon);
 
-	TSet<FVector> VertSet;
-	for (auto i = 0; i < outputTriangles.size(); i++)
-		VertSet.Add(FVector(outputTriangles[i].x, outputTriangles[i].y, Points[0].Z));
+	TSet<FVector> VertexSet;
+	for (auto i = 0; i < OutputTriangles.size(); i++)
+		VertexSet.Add(FVector(OutputTriangles[i].x, OutputTriangles[i].y, InPoints[0].Z));
 
-	Vertices = VertSet.Array();
+	OutVertices = VertexSet.Array();
 
-	for (auto i = 0; i < outputTriangles.size(); i++)
-		Triangles.Add(Vertices.IndexOfByPredicate([&](FVector V) { return FMath::IsNearlyEqual(V.X, outputTriangles[i].x) && FMath::IsNearlyEqual(V.Y, outputTriangles[i].y); }));
+	for (auto i = 0; i < OutputTriangles.size(); i++)
+		OutTriangles.Add(OutVertices.IndexOfByPredicate([&](const FVector Vertex) { return FMath::IsNearlyEqual(Vertex.X, OutputTriangles[i].x) && FMath::IsNearlyEqual(Vertex.Y, OutputTriangles[i].y); }));
 
-	for (auto i = 0; i < boundingPolygon.size(); i++)
-		Bounds.Add(Vertices.IndexOfByPredicate([&](FVector V) { return FMath::IsNearlyEqual(V.X, boundingPolygon[i].x) && FMath::IsNearlyEqual(V.Y, boundingPolygon[i].y); }));
+	for (auto i = 0; i < BoundingPolygon.size(); i++)
+		OutBounds.Add(OutVertices.IndexOfByPredicate([&](const FVector Vertex) { return FMath::IsNearlyEqual(Vertex.X, BoundingPolygon[i].x) && FMath::IsNearlyEqual(Vertex.Y, BoundingPolygon[i].y); }));
 }

@@ -12,5 +12,5 @@ class CLIP2TRI_API UClip2TriFunctionLibrary
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Mesh")
-	static void Triangulate(TArray<FVector> Points, TArray<FVector>& Vertices, TArray<int32>& Triangles, TArray<int32>& Bounds, bool bFlip = false);
+	static void Triangulate(const TArray<FVector>& InPoints, TArray<FVector>& OutVertices, TArray<int32>& OutTriangles, TArray<int32>& OutBounds, bool bFlip = false);
 };
